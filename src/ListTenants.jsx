@@ -32,14 +32,22 @@ function ListTenants() {
     fetchTenants();
   }, []);
 
+  const handleDetails = (tenantId) => {
+    console.log("Ver detalles de:", tenantId);
+    // Aquí más adelante podrías redirigir a una página o mostrar un modal
+  };
+
   return (
     <div style={{ marginTop: "2rem" }}>
       <h3>🏘️ Mis Comunidades</h3>
       {message && <p>{message}</p>}
       <ul>
         {tenants.map((tenant) => (
-          <li key={tenant.id}>
-            <strong>{tenant.name}</strong> (ID: {tenant.id})
+          <li key={tenant.id} style={{ marginBottom: "1rem" }}>
+            <strong>{tenant.name}</strong> <br />
+            Plan: {tenant.plan} <br />
+            Creado: {tenant.created_at ? new Date(tenant.created_at).toLocaleString() : "N/A"} <br />
+            <button onClick={() => handleDetails(tenant.id)}>🔍 Ver detalles</button>
           </li>
         ))}
       </ul>
