@@ -1,10 +1,12 @@
 // src/ListTenants.jsx
 import { useEffect, useState } from "react";
 import { auth } from "./firebaseConfig";
+import AlertsList from "./AlertsList";
 
 function ListTenants() {
   const [tenants, setTenants] = useState([]);
   const [message, setMessage] = useState("");
+  const [selectedTenantId, setSelectedTenantId] = useState(null);
 
   useEffect(() => {
     const fetchTenants = async () => {
@@ -32,11 +34,14 @@ function ListTenants() {
     fetchTenants();
   }, []);
 
-  const handleDetails = (tenantId) => {
-    console.log("Ver detalles de:", tenantId);
-    // Aquí más adelante podrías redirigir a una página o mostrar un modal
-  };
+// 👇 Mostrar alertas si hay una comunidad seleccionada
+  if (selectedTenantId) {
+    return (
+      <AlertsList tenantId={selectedTenantId} onBack={() => setSelectedTenantId(null)} />
+    );
+  }
 
+  // 👇 Lista normal si no hay selección
   return (
     <div style={{ marginTop: "2rem" }}>
       <h3>🏘️ Mis Comunidades</h3>
@@ -47,7 +52,7 @@ function ListTenants() {
             <strong>{tenant.name}</strong> <br />
             Plan: {tenant.plan} <br />
             Creado: {tenant.created_at ? new Date(tenant.created_at).toLocaleString() : "N/A"} <br />
-            <button onClick={() => handleDetails(tenant.id)}>🔍 Ver detalles</button>
+            <button onClick={() => setSelectedTenantId(tenant.id)}>🔍 Ver detalles</button>
           </li>
         ))}
       </ul>
@@ -56,3 +61,4 @@ function ListTenants() {
 }
 
 export default ListTenants;
+     
