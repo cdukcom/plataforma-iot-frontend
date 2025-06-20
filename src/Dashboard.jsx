@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { auth } from "./firebaseConfig";
 import CreateTenant from "./CreateTenant";
 import ListTenants from "./ListTenants";
+import LogoutButton from "./LogoutButton";
 
 function Dashboard() {
   const [user, setUser] = useState(null);
@@ -30,6 +31,8 @@ function Dashboard() {
           - Ver logs
           - Registro de alertas
       */}
+
+      <LogoutButton />  {/* 🔓 Aquí agregamos el botón de cerrar sesión */}
 
       <CreateTenant />
       <ListTenants />
