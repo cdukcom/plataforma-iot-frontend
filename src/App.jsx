@@ -17,7 +17,7 @@ function App() {
 
   return (
     <div style={{ padding: "2rem", fontFamily: "Arial" }}>
-      <h1>DukeVilla IoT - Internet de las cosas para todos</h1>
+      <h1>Facil IoT - IoT para todos</h1>
       {isAuth ? <Dashboard /> : <Login />}
     </div>
   );

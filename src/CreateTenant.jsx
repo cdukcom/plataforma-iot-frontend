@@ -23,6 +23,9 @@ function CreateTenant() {
       const data = await res.json();
       if (res.ok) {
         setMessage(`✅ Comunidad creada con ID: ${data.tenant_id}`);
+        setTimeout(() => {
+          window.location.reload(); // recarga la vista para mostrar la nueva comunidad
+        }, 1000);
       } else {
         setMessage(`❌ Error: ${data.detail || "No se pudo crear la comunidad."}`);
       }

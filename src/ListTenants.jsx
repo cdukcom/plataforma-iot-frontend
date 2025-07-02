@@ -1,18 +1,15 @@
 // src/ListTenants.jsx
 import { useEffect, useState } from "react";
 import { auth } from "./firebaseConfig";
-import AlertsList from "./AlertsList";
 
-function ListTenants() {
+function ListTenants({ onSelect }) {
   const [tenants, setTenants] = useState([]);
   const [message, setMessage] = useState("");
-  const [selectedTenantId, setSelectedTenantId] = useState(null);
 
   useEffect(() => {
     const fetchTenants = async () => {
       try {
         const token = await auth.currentUser.getIdToken();
-
         const res = await fetch("https://iot-platform-multitenant-production.up.railway.app/tenants", {
           method: "GET",
           headers: {
@@ -34,14 +31,6 @@ function ListTenants() {
     fetchTenants();
   }, []);
 
-// 👇 Mostrar alertas si hay una comunidad seleccionada
-  if (selectedTenantId) {
-    return (
-      <AlertsList tenantId={selectedTenantId} onBack={() => setSelectedTenantId(null)} />
-    );
-  }
-
-  // 👇 Lista normal si no hay selección
   return (
     <div style={{ marginTop: "2rem" }}>
       <h3>🏘️ Mis Comunidades</h3>
@@ -52,7 +41,7 @@ function ListTenants() {
             <strong>{tenant.name}</strong> <br />
             Plan: {tenant.plan} <br />
             Creado: {tenant.created_at ? new Date(tenant.created_at).toLocaleString() : "N/A"} <br />
-            <button onClick={() => setSelectedTenantId(tenant.id)}>🔍 Ver detalles</button>
+            <button onClick={() => onSelect(tenant)}>🔍 Ver detalles</button>
           </li>
         ))}
       </ul>

@@ -4,9 +4,13 @@ import { auth } from "./firebaseConfig";
 import CreateTenant from "./CreateTenant";
 import ListTenants from "./ListTenants";
 import LogoutButton from "./LogoutButton";
+import RegisterDevice from "./RegisterDevice";
+import DeviceList from "./DeviceList";
 
 function Dashboard() {
   const [user, setUser] = useState(null);
+  const [view, setView] = useState("menu");
+  const [selectedTenant, setSelectedTenant] = useState(null);
 
   useEffect(() => {
     const unsub = auth.onAuthStateChanged((currentUser) => {
@@ -21,24 +25,37 @@ function Dashboard() {
 
   return (
     <div style={{ padding: "2rem", fontFamily: "Arial" }}>
-      <h2>🌐 Bienvenido al Dashboard</h2>
+      <h2>🌐 Bienvenido a Facil IoT - IoT para todos</h2>
       <p>Usuario autenticado: <strong>{user.email}</strong></p>
       <p>UID: <code>{user.uid}</code></p>
 
-      {/* Aquí puedes ir agregando componentes: 
-          - Lista de dispositivos
-          - Crear comunidad
-          - Ver logs
-          - Registro de alertas
-      */}
+    {view === "register" && selectedTenant ? (
+      <RegisterDevice tenantId={selectedTenant.id} onBack={() => setView("menu")} />
+    ) : view === "devices" && selectedTenant ? (
+      <DeviceList tenantId={selectedTenant.id} onBack={() => setView("menu")} />
+    ) : view === "menu" && selectedTenant ? (
+      <>
+        <h3>📋 Opciones para la comunidad: <strong>{selectedTenant.name}</strong></h3>
+        <button onClick={() => setView("register")}>➕ Registrar Dispositivo</button>
+        <button onClick={() => setView("devices")}>📡 Ver Dispositivos</button>
+        <button onClick={() => setSelectedTenant(null)}>🔙 Cambiar comunidad</button>
+      </>
+    ) : (
+      <>
+        <h3>🏘️ Selecciona una comunidad</h3>
+        <ListTenants onSelect={(tenant) => {
+          setSelectedTenant(tenant);
+          setView("menu");
+        }} />
+     </>
+    )}
 
-      <LogoutButton />  {/* 🔓 Aquí agregamos el botón de cerrar sesión */}
-
+      <hr style={{ margin: "2rem 0" }} />
       <CreateTenant />
-      <ListTenants />
-
+      <LogoutButton />
     </div>
   );
+    
 }
 
 export default Dashboard;
