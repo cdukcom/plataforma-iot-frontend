@@ -104,7 +104,7 @@ function RegisterDevice({ tenantId, onBack }) {
           <select value={gatewayId} onChange={(e) => setGatewayId(e.target.value)} style={{ width: "100%", marginBottom: "0.5rem" }}>
             <option value="">Selecciona un gateway...</option>
             {gateways.map((gw) => (
-              <option key={gw.id} value={gw.id}>{gw.name}</option>
+               <option key={gw._id} value={gw._id}>{gw.name}</option>
             ))}
           </select>
         ) : (
