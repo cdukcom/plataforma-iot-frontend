@@ -51,21 +51,80 @@ function DeviceList({ tenantId, onBack }) {
       <h3>📡 Dispositivos Registrados</h3>
       {message && <p>{message}</p>}
       <ul>
-        {devices.map((device) => (
-          <li key={`device-${device.id}`} style={{ marginBottom: "1rem" }}>
-            <strong>
-              {device.type === "gateway" ? "🖧 " : "📣 "}
-              {device.name}
-            </strong> ({device.type === "gateway" ? "Gateway" : "Botón de Pánico"})<br />
-            🆔 DevEUI: <code>{device.dev_eui}</code><br />
-            ✅ Estado: {device.status}<br />
-            📍 Ubicación: {device.location || "No definida"} <br />
-            📅 Creado: {device.created_at ? new Date(device.created_at).toLocaleString() : "N/A"}<br />
-            {device.type === "panic_button" && (
-              <span>Gateway asociado: <strong>{gatewaysMap[device.gateway_id] || "No encontrado"}</strong></span>
-            )}
-          </li>
-        ))}
+        {devices.map((device) => {
+          const isGateway = device.type === "gateway";
+          const children = devices.filter((d) => d.gateway_id === device.id);
+          const hasChildren = children.length > 0;
+
+          return (
+            <li key={`device-${device.id}`} style={{ marginBottom: "1rem" }}>
+              <strong>
+                {isGateway ? "🖧 " : "📣 "}
+                {device.name}
+              </strong>{" "}
+              ({isGateway ? "Gateway" : "Botón de Pánico"})<br />
+              🆔 DevEUI: <code>{device.dev_eui}</code><br />
+              ✅ Estado: {device.status}<br />
+              📍 Ubicación: {device.location || "No definida"}<br />
+              📅 Creado: {device.created_at ? new Date(device.created_at).toLocaleString() : "N/A"}<br />
+              {!isGateway && (
+                <span>
+                  Gateway asociado:{" "}
+                  <strong>{gatewaysMap[device.gateway_id] || "No encontrado"}</strong>
+               </span>
+              )}
+
+              {/* Eliminar si no tiene hijos o no es gateway */}
+              {(!isGateway || !hasChildren) && (
+                <button
+                  onClick={async () => {
+                    const confirm1 = window.confirm(
+                      `¿Estás seguro de que deseas eliminar el dispositivo "${device.name}"?`
+                    );
+                    if (!confirm1) return;
+
+                    const confirm2 = window.confirm(
+                      "⚠️ Esta acción es irreversible. ¿Deseas continuar?"
+                    );
+                    if (!confirm2) return;
+
+                    try {
+                      const token = await auth.currentUser.getIdToken();
+                      const res = await fetch(
+                        `https://iot-platform-multitenant-production.up.railway.app/devices/${device.id}?confirm=true`,
+                        {
+                          method: "DELETE",
+                          headers: {
+                            Authorization: `Bearer ${token}`,
+                          },
+                        }
+                      );
+                      const result = await res.json();
+                      if (res.ok) {
+                        alert("✅ Dispositivo eliminado correctamente");
+                        setDevices((prev) => prev.filter((d) => d.id !== device.id));
+                      } else {
+                        alert(`❌ Error: ${result.detail || "No se pudo eliminar el dispositivo."}`);
+                      }
+                    } catch (err) {
+                      alert(`⚠️ Error inesperado: ${err.message}`);
+                    }
+                  }}
+                  style={{ marginTop: "0.5rem", color: "red" }}
+                >
+                  🗑️ Eliminar
+                </button>
+              )}
+
+              {/* Mensaje si gateway tiene sensores */}
+              {isGateway && hasChildren && (
+                <p style={{ color: "gray", fontStyle: "italic" }}>
+                  ⚠️ Este gateway tiene sensores asociados. Elimínalos primero.
+                </p>
+              )}
+            </li>
+          );
+        })}
       </ul>
     </div>
   );
