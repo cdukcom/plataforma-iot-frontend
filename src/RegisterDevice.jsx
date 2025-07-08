@@ -12,7 +12,6 @@ function RegisterDevice({ tenantId, onBack }) {
   const [gateways, setGateways] = useState([]);
   const [message, setMessage] = useState("");
 
-  // 👉 Obtener gateways cuando se selecciona "panic_button"
   useEffect(() => {
     const fetchGateways = async () => {
       try {
@@ -23,6 +22,7 @@ function RegisterDevice({ tenantId, onBack }) {
         const data = await res.json();
         if (res.ok) {
           const filtered = data.devices.filter((d) => d.type === "gateway");
+          console.log("📡 Gateways cargados:", filtered);
           setGateways(filtered);
         }
       } catch (err) {
@@ -46,6 +46,18 @@ function RegisterDevice({ tenantId, onBack }) {
       return;
     }
 
+    const payload = {
+      tenant_id: tenantId,
+      dev_eui: devEui.trim(),
+      name: name.trim(),
+      type,
+      status,
+      location: location.trim(),
+      gateway_id: type === "panic_button" ? gatewayId : undefined,
+    };
+
+    console.log("🚀 Payload enviado:", payload);
+
     try {
       const token = await auth.currentUser.getIdToken();
       const res = await fetch("https://iot-platform-multitenant-production.up.railway.app/devices", {
@@ -54,18 +66,12 @@ function RegisterDevice({ tenantId, onBack }) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          tenant_id: tenantId,
-          dev_eui: devEui.trim(),
-          name: name.trim(),
-          type,
-          status,
-          location: location.trim(),
-          gateway_id: type === "panic_button" ? gatewayId : undefined,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
+      console.log("📥 Respuesta del backend:", data);
+
       if (res.ok) {
         setMessage("✅ Dispositivo registrado correctamente.");
         setDevEui("");
@@ -73,9 +79,8 @@ function RegisterDevice({ tenantId, onBack }) {
         setLocation("");
         setGatewayId("");
 
-        // Espera 1 segundo y regresa al menú
         setTimeout(() => {
-        onBack();  // ← vuelve al menú
+        onBack();
         }, 1000);
 
       } else {
@@ -101,7 +106,7 @@ function RegisterDevice({ tenantId, onBack }) {
 
       {type === "panic_button" && (
         gateways.length > 0 ? (
-          <select value={gatewayId} onChange={(e) => setGatewayId(e.target.value)} style={{ width: "100%", marginBottom: "0.5rem" }}>
+          <select value={gatewayId} onChange={(e) => {console.log("🎯 Gateway seleccionado (ID):", e.target.value); setGatewayId(e.target.value)}} style={{ width: "100%", marginBottom: "0.5rem" }}>
             <option value="">Selecciona un gateway...</option>
             {gateways.map((gw) => (
                <option key={gw._id} value={gw._id}>{gw.name}</option>
