@@ -35,12 +35,18 @@ function RegisterDevice({ tenantId, onBack }) {
     }
   }, [type, tenantId]);
 
+  const isValidDevEui = (eui) => /^[0-9a-fA-F]{16}$/.test(eui);
   const handleSubmit = async () => {
     if (!devEui.trim() || !name.trim() || !location.trim()) {
-      setMessage("⚠️ Todos los campos son obligatorios.");
-      return;
+       setMessage("⚠️ Todos los campos son obligatorios.");
+       return;
     }
 
+    if (!isValidDevEui(devEui.trim())) {
+       setMessage("⚠️ El DevEUI debe tener exactamente 16 caracteres hexadecimales (0-9, a-f).");
+       return;
+    }
+    
     if (type === "panic_button" && !gatewayId) {
       setMessage("⚠️ Debes seleccionar un gateway para crear un sensor.");
       return;
@@ -78,7 +84,6 @@ function RegisterDevice({ tenantId, onBack }) {
         setName("");
         setLocation("");
         setGatewayId("");
-
         setTimeout(() => {
         onBack();
         }, 1000);
