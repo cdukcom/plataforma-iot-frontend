@@ -1,5 +1,6 @@
 // src/Dashboard.jsx
 import { useEffect, useState } from "react";
+import ChirpstackTestButton from "./ChirpstackTestButton";
 import { auth } from "./firebaseConfig";
 import CreateTenant from "./CreateTenant";
 import ListTenants from "./ListTenants";
@@ -7,17 +8,25 @@ import LogoutButton from "./LogoutButton";
 import RegisterDevice from "./RegisterDevice";
 import DeviceList from "./DeviceList";
 
+
+
 function Dashboard() {
   const [user, setUser] = useState(null);
   const [view, setView] = useState("menu");
   const [selectedTenant, setSelectedTenant] = useState(null);
 
   useEffect(() => {
-    const unsub = auth.onAuthStateChanged((currentUser) => {
+  const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
+    if (currentUser) {
+      const token = await currentUser.getIdToken();
+      currentUser.accessToken = token;
       setUser(currentUser);
-    });
-    return () => unsub(); // Cleanup
-  }, []);
+    } else {
+      setUser(null);
+    }
+  });
+  return () => unsubscribe();
+}, []);
 
   if (!user) {
     return <p>🔐 Acceso restringido. Por favor inicia sesión.</p>;
@@ -26,6 +35,12 @@ function Dashboard() {
   return (
     <div style={{ padding: "2rem", fontFamily: "Arial" }}>
       <h2>🌐 Bienvenido a Facil IoT - IoT para todos</h2>
+      {selectedTenant && user?.accessToken && (
+        <ChirpstackTestButton
+        tenantId={selectedTenant.id}
+        token={user.accessToken}
+       />
+      )}
       <p>Usuario autenticado: <strong>{user.email}</strong></p>
       <p>UID: <code>{user.uid}</code></p>
 
