@@ -28,6 +28,31 @@ function Dashboard() {
   return () => unsubscribe();
 }, []);
 
+  const handleDeleteCommunity = async (tenantId) => {
+    const confirmDelete = window.confirm("¿Estás seguro de que quieres eliminar esta comunidad?");
+    if (!confirmDelete) return;
+
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/tenants/${tenantId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.detail || "No se pudo eliminar la comunidad.");
+
+      alert("Comunidad eliminada correctamente");
+      setSelectedTenant(null); // Volver al listado
+      window.location.reload(); // Recarga la lista
+    } catch (error) {
+      alert("Error al eliminar la comunidad");
+      console.error(error);
+    }
+  };
+
   if (!user) {
     return <p>🔐 Acceso restringido. Por favor inicia sesión.</p>;
   }
@@ -58,10 +83,13 @@ function Dashboard() {
     ) : (
       <>
         <h3>🏘️ Selecciona una comunidad</h3>
-        <ListTenants onSelect={(tenant) => {
-          setSelectedTenant(tenant);
-          setView("menu");
-        }} />
+        <ListTenants 
+          onSelect={(tenant) => {
+            setSelectedTenant(tenant);
+            setView("menu");
+          }}
+          onDelete={handleDeleteCommunity}
+        />
      </>
     )}
 

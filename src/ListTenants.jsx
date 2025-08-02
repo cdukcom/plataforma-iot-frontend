@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { auth } from "./firebaseConfig";
 
-function ListTenants({ onSelect }) {
+function ListTenants({ onSelect, onDelete }) {
   const [tenants, setTenants] = useState([]);
   const [message, setMessage] = useState("");
 
@@ -42,6 +42,10 @@ function ListTenants({ onSelect }) {
             Plan: {tenant.plan} <br />
             Creado: {tenant.created_at ? new Date(tenant.created_at).toLocaleString() : "N/A"} <br />
             <button onClick={() => onSelect(tenant)}>🔍 Ver detalles</button>
+            {" "}
+            <button onClick={() => onDelete(tenant.id)} style={{ color: "red" }}>
+              🗑️ Eliminar
+            </button>
           </li>
         ))}
       </ul>
