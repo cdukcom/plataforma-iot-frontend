@@ -26,19 +26,21 @@ export default function RegisterDevice({ tenantId, token, onBack, onError }) {
       setLoadingGateways(true);
       setMessage("");
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/devices/${tenantId}`, {
-          method: "GET",
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-          signal: ctrl.signal,
-        });
+        const res = await fetch(
+          `${import.meta.env.VITE_API_URL}/gateways?tenant_id=${tenantId}`,
+          {
+            method: "GET",
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            signal: ctrl.signal,
+          }
+        );
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          const detail = data?.detail || `Error ${res.status}`;
-          throw new Error(detail);
+           const detail = data?.detail || `Error ${res.status}`;
+           throw new Error(detail);
         }
-        const list = Array.isArray(data) ? data : (data.devices || []);
-        const onlyGateways = list.filter((d) => d.type === "gateway");
-        setGateways(onlyGateways);
+        const list = Array.isArray(data) ? data : (data.gateways || []);
+        setGateways(list);
       } catch (e) {
         if (e.name === "AbortError") return;
         console.error(e);
@@ -55,9 +57,11 @@ export default function RegisterDevice({ tenantId, token, onBack, onError }) {
   }, [type, tenantId, token, onError]);
 
   const handleSubmit = async () => {
-    const cleanDevEui = devEui.trim();
+    const cleanDevEui = devEui.trim().toUpperCase();
     const cleanName = name.trim();
     const cleanLocation = location.trim();
+
+    
 
     if (!cleanDevEui || !cleanName || !cleanLocation) {
       const msg = "⚠️ Todos los campos son obligatorios.";
@@ -89,27 +93,46 @@ export default function RegisterDevice({ tenantId, token, onBack, onError }) {
       location: cleanLocation,
       ...(type === "panic_button" ? { gateway_id: gatewayId } : {}),
     };
+    
+    // NUEVO: routing por tipo
+    const url =
+      type === "gateway"
+        ? `${import.meta.env.VITE_API_URL}/gateways`
+        : `${import.meta.env.VITE_API_URL}/devices`;
+
+    const body =
+      type === "gateway"
+        ? {
+           tenant_id: tenantId,
+           gateway_id: cleanDevEui, // backend espera gateway_id
+           name: cleanName,
+           description: "",
+           tags: { model: "MG6" }, // opcional
+           location: cleanLocation,
+          }
+        : payload;
 
     setSubmitting(true);
     setMessage("");
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/devices`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify(payload),
+      const res = await fetch(url, {
+         method: "POST",
+         headers: {
+           "Content-Type": "application/json",
+           ...(token ? { Authorization: `Bearer ${token}` } : {}),
+         },
+        body: JSON.stringify(body),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        const detail = data?.detail || `Error ${res.status}`;
-        throw new Error(detail);
-      }
+      if (!res.ok || data?.ok === false) {
+         const detail = data?.detail || `Error ${res.status}`;
+         throw new Error(detail);
+       }
 
       setMessage("✅ Dispositivo registrado correctamente.");
       onError?.(""); // limpia banner si lo usas arriba
+      
       // limpiar formulario
       setDevEui("");
       setName("");
@@ -169,7 +192,7 @@ export default function RegisterDevice({ tenantId, token, onBack, onError }) {
           >
             <option value="">Selecciona un gateway…</option>
             {gateways.map((gw) => {
-              const id = gw._id || gw.id; // soporta ambos
+              const id = gw._id || gw.id || gw.gateway_id; // soporta ambos
               const nm = gw.name || gw.nombre || "Gateway";
               return <option key={id} value={id}>{nm}</option>;
             })}

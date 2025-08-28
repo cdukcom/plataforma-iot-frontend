@@ -1,5 +1,6 @@
 // src/components/DeviceList.jsx
 import { useEffect, useState } from "react";
+const API_URL = import.meta.env.VITE_API_URL;
 
 export default function DeviceList({ tenantId, token, onBack, onError }) {
   const [devices, setDevices] = useState([]);
@@ -13,7 +14,7 @@ export default function DeviceList({ tenantId, token, onBack, onError }) {
 
     (async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/devices/${tenantId}`, {
+        const res = await fetch(`${API_URL}/devices/${tenantId}`, {
           method: "GET",
           headers: token ? { Authorization: `Bearer ${token}` } : {},
           signal: ctrl.signal,
@@ -49,7 +50,15 @@ export default function DeviceList({ tenantId, token, onBack, onError }) {
   }, [tenantId, token]);
 
   const handleDelete = async (device) => {
+    const isGateway = (device.type || "").toLowerCase() === "gateway";
+    const devEui = (device.dev_eui || "").trim().toUpperCase();
     const deviceId = device.id || device._id;
+    
+    // Log temporal para validar rama (lo quitamos luego)
+    console.log("[DeviceList] delete pressed", { isGateway, devEui, deviceId });
+    
+
+    
     if (!deviceId) return setMessage("❌ Dispositivo inválido.");
 
     const confirm1 = window.confirm(`¿Eliminar "${device.name || device.nombre}"?`);
@@ -58,13 +67,24 @@ export default function DeviceList({ tenantId, token, onBack, onError }) {
     if (!confirm2) return;
 
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/devices/${deviceId}?confirm=true`,
-        {
-          method: "DELETE",
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
+      let res;
+      if (isGateway) {
+        // BORRADO GATEWAY (ChirpStack + Mongo)
+        if (!devEui || devEui.length !== 16 || /[^0-9A-F]/.test(devEui)) {
+          throw new Error("DevEUI inválido para gateway.");
         }
-      );
+        res = await fetch(
+          `${API_URL}/gateways/${devEui}?tenant_id=${tenantId}&confirm=true`,
+          { method: "DELETE", headers: token ? { Authorization: `Bearer ${token}` } : {} }
+        );
+      } else {
+        // BORRADO SENSOR (solo Mongo)
+        res = await fetch(
+          `${API_URL}/devices/${deviceId}?confirm=true`,
+          { method: "DELETE", headers: token ? { Authorization: `Bearer ${token}` } : {} }
+        );
+      }
+
       const result = await res.json().catch(() => ({}));
       if (!res.ok) {
         const detail = result?.detail || `Error ${res.status}`;
